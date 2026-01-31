@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Eye, Ear, Hand, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Eye, Ear, Hand, ArrowRight, Zap, Heart } from 'lucide-react';
 import type { Mode } from '../App';
 
 interface DashboardProps {
@@ -82,20 +82,25 @@ export default function Dashboard({ onSelectMode }: DashboardProps) {
                 transition={{ delay: 0.8 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6"
             >
-                <div className="clay-card rounded-3xl p-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-green-500/10 rounded-2xl">
-                            <ShieldCheck className="w-8 h-8 text-green-400" />
+                <div className="clay-card rounded-3xl p-8 flex items-center justify-between overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="p-4 bg-rose-500/10 rounded-2xl">
+                            <Heart className="w-8 h-8 text-rose-400 fill-rose-400/20" />
                         </div>
                         <div>
-                            <h4 className="text-xl font-bold text-[#1A2847]">System Secure</h4>
-                            <p className="text-gray-400 text-xs">All systems operational</p>
+                            <h4 className="text-xl font-bold text-[#1A2847]">Emotional Connection</h4>
+                            <p className="text-gray-400 text-xs">Sync level: Deep</p>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                        <span className="text-4xl font-bold text-green-400">100%</span>
+                    <div className="flex flex-col items-end relative z-10">
+                        <span className="text-4xl font-bold text-rose-400">98%</span>
                         <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden mt-1">
-                            <div className="w-full h-full bg-green-400" />
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: '98%' }}
+                                className="h-full bg-rose-400"
+                            />
                         </div>
                     </div>
                 </div>
