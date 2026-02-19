@@ -34,7 +34,7 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
 // Rate Limiting (Hardening against brute force)
 const limiter = rateLimit({
@@ -45,6 +45,16 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 app.use('/api/', limiter); // Apply to all API routes
+
+// Stricter auth limiter
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'Too many login attempts, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/auth/', authLimiter);
 
 // Proxy for Gesture Detection (Python Backend)
 app.post('/api/accessibility/detect-gesture', async (req, res) => {

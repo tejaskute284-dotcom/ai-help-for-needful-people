@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/security');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 const persistenceService = require('../services/persistenceService');
@@ -34,7 +35,17 @@ router.get('/settings', verifyToken, (req, res) => {
 });
 
 // PUT update settings
-router.put('/settings', verifyToken, (req, res) => {
+router.put('/settings', [
+    verifyToken,
+    body('voiceNavigation.enabled').optional().isBoolean(),
+    body('voiceNavigation.sensitivity').optional().isFloat({ min: 0, max: 1 }),
+    body('screenReader.enabled').optional().isBoolean(),
+    body('screenReader.speed').optional().isFloat({ min: 0.1, max: 5 }),
+    body('visualAdjustments.fontSize').optional().isInt({ min: 8, max: 72 })
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
     accessibilitySettings = { ...accessibilitySettings, ...req.body };
     persistenceService.save('accessibility_settings.json', accessibilitySettings);
     res.json(accessibilitySettings);

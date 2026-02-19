@@ -6,7 +6,11 @@ const { body, validationResult } = require('express-validator');
 const { accountLockout, handleFailedLogin, resetLockout, authLimiter, verifyToken } = require('../middleware/security');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.warn('⚠️ WARNING: JWT_SECRET not set in environment. Authentication will fail.');
+}
 
 const persistenceService = require('../services/persistenceService');
 
@@ -67,6 +71,7 @@ router.post('/login', [
     // Success: Clear lockout status
     resetLockout(email);
 
+    if (!JWT_SECRET) return res.status(500).json({ message: 'Server authentication error' });
     const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, message: 'Login successful' });
 });
