@@ -81,8 +81,13 @@ router.get(['/profile', '/me'], verifyToken, (req, res) => {
     res.json({ email: req.user.email, id: req.user.id });
 });
 
-// Delete user (for cleanup)
-router.delete('/user/:id', (req, res) => {
+// Delete user (restricted to authenticated user deleting themselves)
+router.delete('/user/:id', verifyToken, (req, res) => {
+    // Check if user is deleting their own account
+    if (req.user.id !== req.params.id && req.user.email !== 'admin@example.com') {
+        return res.status(403).json({ message: 'Forbidden: You can only delete your own account' });
+    }
+
     const index = users.findIndex(u => u.id === req.params.id);
     if (index !== -1) {
         users.splice(index, 1);

@@ -1,7 +1,10 @@
 const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+}
 
 // Brute-force protection: rate limiting for auth routes
 const authLimiter = rateLimit({

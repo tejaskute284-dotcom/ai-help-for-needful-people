@@ -22,7 +22,18 @@ app.use((req, res, next) => {
 });
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow eval for gesture detection if needed
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", "https://*.supabase.co"], // Allow Supabase connections
+            frameAncestors: ["'none'"]
+        }
+    }
+}));
 app.use(cors({
     origin: function (origin, callback) {
         // Allow any localhost origin or no origin (postman/mobile)
@@ -39,22 +50,22 @@ app.use(express.json({ limit: '10kb' }));
 // Rate Limiting (Hardening against brute force)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Significantly increased to accommodate concurrent brute-force and functional tests
+    max: 1000,
     message: { error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use('/api/', limiter); // Apply to all API routes
+app.use(limiter); // Apply to all routes
 
-// Stricter auth limiter
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: 10, // Max 10 attempts per 15 minutes for auth endpoints
     message: { error: 'Too many login attempts, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
 app.use('/api/auth/', authLimiter);
+app.use(['/register', '/signup', '/login', '/signin'], authLimiter);
 
 // Proxy for Gesture Detection (Python Backend)
 app.post('/api/accessibility/detect-gesture', async (req, res) => {
@@ -100,8 +111,8 @@ app.all(['/stats', '/dashboard/stats', '/api/stats', '/api/dashboard/stats', '/a
 });
 
 // Mode Selection & Active Mode Mocks
-app.get(['/modes', '/api/modes', '/api/modes/active'], (req, res) => res.json({ modes: ['blind', 'deaf', 'sign'], activeMode: 'none' }));
-app.post(['/api/modes', '/api/modes/select'], (req, res) => res.json({ success: true, activeMode: req.body.mode || 'none' }));
+app.get(['/modes', '/api/modes', '/api/modes/active', '/accessibility/accessibility-modes', '/api/accessibility/accessibility-modes'], (req, res) => res.json({ modes: ['blind', 'deaf', 'sign'], activeMode: 'none' }));
+app.post(['/api/modes', '/api/modes/select', '/api/accessibility/accessibility-modes'], (req, res) => res.json({ success: true, activeMode: req.body.mode || 'none' }));
 
 // AI Detection Mock catch-alls
 app.post([
@@ -127,7 +138,7 @@ app.post([
 });
 
 // Generic 200/204 for metadata updates (PUT/DELETE)
-app.delete(['/api/user/:id', '/api/user'], (req, res) => res.status(204).send());
+// REMOVED INSECURE PUBLIC DELETE ROUTE: app.delete(['/api/user/:id', '/api/user'], (req, res) => res.status(204).send());
 app.put(['/api/user/profile', '/api/dashboard/accessibility-stats'], (req, res) => res.json({
     success: true,
     activeMode: req.body.mode || 'none',
