@@ -17,16 +17,33 @@ export interface Landmark {
     z: number;
 }
 
+// Helper: Calculate distance between two landmarks
+const getDist = (landmarks: Landmark[], p1: number, p2: number) => {
+    return Math.sqrt(
+        Math.pow(landmarks[p1].x - landmarks[p2].x, 2) +
+        Math.pow(landmarks[p1].y - landmarks[p2].y, 2)
+    );
+};
+
 export function detectASLGesture(landmarks: Landmark[]): { gesture: string; confidence: number } | null {
     if (!landmarks || landmarks.length < 21) return null;
 
-    // Helper: Calculate distance between two landmarks
-    const getDist = (p1: number, p2: number) => {
-        return Math.sqrt(
-            Math.pow(landmarks[p1].x - landmarks[p2].x, 2) +
-            Math.pow(landmarks[p1].y - landmarks[p2].y, 2)
-        );
-    };
+    // Pre-calculate distances to wrist (0) once
+    const dist0_5 = getDist(landmarks, 5, 0);
+    const dist0_8 = getDist(landmarks, 8, 0);
+    const dist0_9 = getDist(landmarks, 9, 0);
+    const dist0_12 = getDist(landmarks, 12, 0);
+    const dist0_13 = getDist(landmarks, 13, 0);
+    const dist0_16 = getDist(landmarks, 16, 0);
+    const dist0_17 = getDist(landmarks, 17, 0);
+    const dist0_20 = getDist(landmarks, 20, 0);
+
+    // Pre-calculate distances to thumb tip (4) once
+    const dist4_5 = getDist(landmarks, 5, 4);
+    const dist4_8 = getDist(landmarks, 8, 4);
+    const dist4_12 = getDist(landmarks, 12, 4);
+    const dist4_16 = getDist(landmarks, 16, 4);
+    const dist4_20 = getDist(landmarks, 20, 4);
 
     // Distance-based check for finger extension (more robust than simple Y-comparison)
     const isFingerUp = (tip: number, mcp: number) => {
@@ -34,33 +51,23 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
         const distMcp = getDist(mcp, 0);
         return distTip > distMcp * 1.3; // 30% further than base joint (lowered from 1.35 for better range)
     };
+    const indexUp = dist0_8 > dist0_5 * 1.35;
+    const middleUp = dist0_12 > dist0_9 * 1.35;
+    const ringUp = dist0_16 > dist0_13 * 1.35;
+    const pinkyUp = dist0_20 > dist0_17 * 1.35;
 
     // Check if finger is curled (tip close to palm/base)
-    const isFingerCurled = (tip: number, mcp: number) => {
-        const distTip = getDist(tip, 0);
-        const distMcp = getDist(mcp, 0);
-        return distTip < distMcp * 1.1; // Tip closer to wrist than the base
-    };
-
-    // Check if fingertip is touching or very close to thumb tip
-    const isTouchingThumb = (fingerTip: number) => {
-        return getDist(fingerTip, 4) < 0.06; // Close proximity
-    };
-
-    const indexUp = isFingerUp(8, 5);
-    const middleUp = isFingerUp(12, 9);
-    const ringUp = isFingerUp(16, 13);
-    const pinkyUp = isFingerUp(20, 17);
-
-    const indexCurled = isFingerCurled(8, 5);
-    const middleCurled = isFingerCurled(12, 9);
-    const ringCurled = isFingerCurled(16, 13);
-    const pinkyCurled = isFingerCurled(20, 17);
+    const indexCurled = dist0_8 < dist0_5 * 1.1;
+    const middleCurled = dist0_12 < dist0_9 * 1.1;
+    const ringCurled = dist0_16 < dist0_13 * 1.1;
+    const pinkyCurled = dist0_20 < dist0_17 * 1.1;
 
     // Thumb checks
-    const thumbUp = getDist(4, 17) > getDist(3, 17) * 1.3;
+    const dist17_4 = getDist(landmarks, 4, 17);
+    const dist17_3 = getDist(landmarks, 3, 17);
+    const thumbUp = dist17_4 > dist17_3 * 1.3;
     const thumbSide = landmarks[4].x > landmarks[3].x && !thumbUp; // Thumb to the side (for A)
-    const thumbExtendedOut = getDist(4, 3) > 0.04; // Simple check if thumb is not tucked
+    const thumbExtendedOut = getDist(landmarks, 4, 3) > 0.04; // Simple check if thumb is not tucked
 
     // ============================================
     // ASL ALPHABET LETTERS
@@ -71,7 +78,7 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     if (!indexUp && !middleUp && !ringUp && !pinkyUp &&
         indexCurled && middleCurled && ringCurled && pinkyCurled) {
         // Check thumb is on side, not across fingers
-        const thumbBesideFist = getDist(4, 8) > 0.08 && getDist(4, 5) < 0.12;
+        const thumbBesideFist = dist4_8 > 0.08 && dist4_5 < 0.12;
         if (thumbBesideFist || thumbSide) {
             return { gesture: 'A', confidence: 0.88 };
         }
@@ -85,9 +92,8 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
 
     // --- C: Curved shape (like holding a cup) ---
     // Key: Thumb and Index tips are close but not touching, other fingers aligned
-    const distThumbIndex = getDist(4, 8);
     // Range: 0.10 to 0.35 (relaxed)
-    if (distThumbIndex > 0.10 && distThumbIndex < 0.35) {
+    if (dist4_8 > 0.10 && dist4_8 < 0.35) {
         // Check if fingers are somewhat curved (not fully extended, not fully curled)
         // Or at least aligned in a C-shape.
         // Simplified: Palm facing side, fingers somewhat parallel
@@ -97,7 +103,7 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
         // Just rely on the thumb-index gap and general openness
         if (notFullyCurled) {
             // Fingers should be close to each other
-            const fingersClose = getDist(8, 12) < 0.08 && getDist(12, 16) < 0.08;
+            const fingersClose = getDist(landmarks, 8, 12) < 0.08 && getDist(landmarks, 12, 16) < 0.08;
             if (fingersClose) {
                 return { gesture: 'C', confidence: 0.85 };
             }
@@ -107,8 +113,8 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     // --- D: Index up, other fingers touch thumb forming circle ---
     if (indexUp && !middleUp && !ringUp && !pinkyUp) {
         // Check if middle, ring, pinky tips are near thumb tip
-        const middleTouchesThumb = isTouchingThumb(12);
-        const ringTouchesThumb = isTouchingThumb(16) || getDist(16, 4) < 0.08;
+        const middleTouchesThumb = dist4_12 < 0.06;
+        const ringTouchesThumb = dist4_16 < 0.06 || dist4_16 < 0.08;
         if (middleTouchesThumb || ringTouchesThumb) {
             return { gesture: 'D', confidence: 0.85 };
         }
@@ -117,7 +123,7 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     // --- E: All fingertips curled down touching thumb ---
     if (!indexUp && !middleUp && !ringUp && !pinkyUp && !thumbUp) {
         // Check if fingertips are close to thumb or near palm
-        const tipsNearThumb = getDist(8, 4) < 0.08 && getDist(12, 4) < 0.10;
+        const tipsNearThumb = dist4_8 < 0.08 && dist4_12 < 0.10;
         const allCurled = indexCurled && middleCurled && ringCurled && pinkyCurled;
         if (allCurled && tipsNearThumb) {
             return { gesture: 'E', confidence: 0.80 };
@@ -125,7 +131,7 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     }
 
     // --- F: Thumb and Index form circle, other fingers up ---
-    if (middleUp && ringUp && pinkyUp && isTouchingThumb(8)) {
+    if (middleUp && ringUp && pinkyUp && dist4_8 < 0.06) {
         return { gesture: 'F', confidence: 0.85 };
     }
 
@@ -143,7 +149,7 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
 
     // --- K: Index and Middle up, spread apart like scissors ---
     if (indexUp && middleUp && !ringUp && !pinkyUp && thumbUp) {
-        const spread = getDist(8, 12);
+        const spread = getDist(landmarks, 8, 12);
         if (spread > 0.08) {
             return { gesture: 'K', confidence: 0.80 };
         }
@@ -155,24 +161,22 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     }
 
     // --- O: All fingers curved to form O with thumb ---
-    const allTouchThumb = getDist(8, 4) < 0.06 && getDist(12, 4) < 0.08 &&
-        getDist(16, 4) < 0.10 && getDist(20, 4) < 0.12;
+    const allTouchThumb = dist4_8 < 0.06 && dist4_12 < 0.08 &&
+        dist4_16 < 0.10 && dist4_20 < 0.12;
     if (allTouchThumb && !thumbUp) {
         return { gesture: 'O', confidence: 0.78 };
     }
 
     // --- U: Index and Middle up, close together ---
     if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbUp) {
-        const close = getDist(8, 12) < 0.05;
+        const dist8_12 = getDist(landmarks, 8, 12);
+        const close = dist8_12 < 0.05;
         if (close) {
             return { gesture: 'U', confidence: 0.85 };
         }
-    }
 
-    // --- V: Index and Middle up, spread (Peace sign) ---
-    if (indexUp && middleUp && !ringUp && !pinkyUp && !thumbUp) {
-        const spread = getDist(8, 12);
-        if (spread >= 0.05) {
+        // --- V: Index and Middle up, spread (Peace sign) ---
+        if (dist8_12 >= 0.05) {
             return { gesture: 'V', confidence: 0.90 };
         }
     }
@@ -185,8 +189,8 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     // --- X: Index bent/hooked ---
     if (!indexUp && !middleUp && !ringUp && !pinkyUp) {
         // Index is somewhat extended but tip is curled down
-        const indexPartial = getDist(8, 0) > getDist(5, 0) * 1.1 &&
-            getDist(8, 0) < getDist(5, 0) * 1.3;
+        const indexPartial = dist0_8 > dist0_5 * 1.1 &&
+            dist0_8 < dist0_5 * 1.3;
         if (indexPartial && middleCurled && ringCurled && pinkyCurled) {
             return { gesture: 'X', confidence: 0.72 };
         }

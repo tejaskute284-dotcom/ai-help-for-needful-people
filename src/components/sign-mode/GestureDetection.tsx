@@ -32,12 +32,18 @@ export function GestureDetection() {
         }
     }, [gestureOutput, isCameraActive, announce]);
 
+    const loopRef = useRef<() => void>(() => {});
+
     const loop = useCallback(() => {
         if (videoRef.current && canvasRef.current && isCameraActive) {
             predictWebcam(videoRef.current, canvasRef.current);
-            requestRef.current = requestAnimationFrame(loop);
+            requestRef.current = requestAnimationFrame(() => loopRef.current());
         }
     }, [isCameraActive, predictWebcam]);
+
+    useEffect(() => {
+        loopRef.current = loop;
+    }, [loop]);
 
     const startCamera = async () => {
         try {
