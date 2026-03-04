@@ -124,7 +124,7 @@ export const JoinMovement = ({ isOpen, onClose, onSuccess }: JoinMovementProps) 
                                 className="w-full py-4 text-center justify-center"
                                 ariaLabel={isLogin ? 'Log In' : 'Sign Up'}
                             >
-                                {isLoading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
+                                {isLoading ? 'Processing…' : isLogin ? 'Sign In' : 'Create Account'}
                             </Button>
                         </form>
 

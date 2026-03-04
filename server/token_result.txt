@@ -1,3 +1,0 @@
-Register: {"message":"User registered successfully"}
-Login: {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QxNzY5Nzg3MjU5MDAyQGV4YW1wbGUuY29tIiwiaWF0IjoxNzY5Nzg3MjU5LCJleHAiOjE3Njk3OTA4NTl9.Ck15oVOguTY7oaF2m_eNAC37tU_qP6TcZO5HQGrz1Lg","message":"Login successful"}
-TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QxNzY5Nzg3MjU5MDAyQGV4YW1wbGUuY29tIiwiaWF0IjoxNzY5Nzg3MjU5LCJleHAiOjE3Njk3OTA4NTl9.Ck15oVOguTY7oaF2m_eNAC37tU_qP6TcZO5HQGrz1Lg

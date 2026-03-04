@@ -1,27 +1,52 @@
 [
   {
     "id": "TC001",
-    "title": "test authentication user registration and login",
-    "description": "Verify secure user registration and login functionality with JWT and biometric/MFA features to ensure only authorized users can access the system."
+    "title": "test user registration and login authentication",
+    "description": "Verify the user registration and login endpoints handle input validation, password hashing, and JWT token generation correctly, ensuring secure authentication flow."
   },
   {
     "id": "TC002",
-    "title": "test dashboard real time accessibility statistics",
-    "description": "Validate that the dashboard displays real-time accessibility statistics and compliance trends accurately and updates dynamically."
+    "title": "test mode selection and retrieval",
+    "description": "Validate the API endpoint that allows users to select and retrieve accessibility modes, ensuring correct mode activation and persistence."
   },
   {
     "id": "TC003",
-    "title": "test accessibility controls settings application",
-    "description": "Ensure that the accessibility controls allow users to configure voice navigation, screen readers, and visual adjustments, and that these settings apply immediately and correctly."
+    "title": "test real-time object detection feedback in blind mode",
+    "description": "Test the backend API integration for Blind Mode to confirm object detection results are processed and text-to-speech feedback is generated with minimal latency."
   },
   {
     "id": "TC004",
-    "title": "test gesture recognition vision based sign language translation",
-    "description": "Test the gesture recognition feature to confirm it detects and translates hand gestures accurately using MediaPipe and the Flask backend."
+    "title": "test real-time speech to text and sound event detection in deaf mode",
+    "description": "Ensure the Deaf Mode API correctly transcribes speech to text and detects environmental sounds in real-time with accurate and timely responses."
   },
   {
     "id": "TC005",
-    "title": "test ai assistant conversational ai functionality",
-    "description": "Verify the AI assistant provides accurate conversational AI responses for deep content understanding and user assistance."
+    "title": "test sign language gesture recognition api",
+    "description": "Verify the Flask API for advanced gesture processing accurately recognizes sign language gestures and returns correct translations to the frontend."
+  },
+  {
+    "id": "TC006",
+    "title": "test dashboard accessibility statistics retrieval",
+    "description": "Check the dashboard API endpoint for fetching accessibility statistics and compliance metrics, ensuring data accuracy and correct visualization support."
+  },
+  {
+    "id": "TC007",
+    "title": "test user profile and accessibility preferences update",
+    "description": "Validate the API endpoint for updating user profile information and accessibility preferences, ensuring data is saved securely and input is sanitized."
+  },
+  {
+    "id": "TC008",
+    "title": "test jwt token validation and session management",
+    "description": "Test the backend API's JWT token validation mechanism to ensure secure session management and protection against unauthorized access."
+  },
+  {
+    "id": "TC009",
+    "title": "test rate limiting and brute force protection",
+    "description": "Verify that the API endpoints implement rate limiting and brute-force attack protection effectively to maintain security and service availability."
+  },
+  {
+    "id": "TC010",
+    "title": "test input validation and sanitization for all api endpoints",
+    "description": "Ensure all backend API endpoints validate and sanitize incoming requests to prevent security vulnerabilities such as injection attacks."
   }
 ]

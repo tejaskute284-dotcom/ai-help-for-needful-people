@@ -24,7 +24,7 @@ export const STTPanel = () => {
                 {transcript ? (
                     <p className="text-white/90 leading-relaxed">{transcript}</p>
                 ) : (
-                    <p className="text-white/30 italic text-sm">Transcribed text will appear here...</p>
+                    <p className="text-white/30 italic text-sm">Transcribed text will appear here…</p>
                 )}
             </div>
 

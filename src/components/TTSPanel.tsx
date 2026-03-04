@@ -23,7 +23,7 @@ export const TTSPanel = () => {
             <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Type here to speak..."
+                placeholder="Type here to speak…"
                 className="w-full bg-black/20 rounded-xl p-4 border border-white/10 focus:border-blue-500/50 outline-none resize-none h-[120px] text-white placeholder:text-white/30"
             />
 

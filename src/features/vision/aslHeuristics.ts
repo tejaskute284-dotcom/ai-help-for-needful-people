@@ -46,6 +46,11 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     const dist4_20 = getDist(landmarks, 20, 4);
 
     // Distance-based check for finger extension (more robust than simple Y-comparison)
+    const isFingerUp = (tip: number, mcp: number) => {
+        const distTip = getDist(tip, 0);
+        const distMcp = getDist(mcp, 0);
+        return distTip > distMcp * 1.3; // 30% further than base joint (lowered from 1.35 for better range)
+    };
     const indexUp = dist0_8 > dist0_5 * 1.35;
     const middleUp = dist0_12 > dist0_9 * 1.35;
     const ringUp = dist0_16 > dist0_13 * 1.35;
@@ -194,6 +199,103 @@ export function detectASLGesture(landmarks: Landmark[]): { gesture: string; conf
     // --- Y: Thumb and Pinky up (like shaka/hang loose) ---
     if (thumbUp && pinkyUp && !indexUp && !middleUp && !ringUp) {
         return { gesture: 'Y', confidence: 0.92 };
+    }
+
+    // --- H: Index and Middle horizontal, pointing sideways ---
+    const indexMiddleHorizontal = Math.abs(landmarks[8].y - landmarks[12].y) < 0.03 &&
+        Math.abs(landmarks[8].y - landmarks[5].y) < 0.06;
+    if (indexUp && middleUp && !ringUp && !pinkyUp && indexMiddleHorizontal) {
+        const fingersClose = getDist(8, 12) < 0.06;
+        if (fingersClose) {
+            return { gesture: 'H', confidence: 0.82 };
+        }
+    }
+
+    // --- J: Pinky traces J shape (dynamic, but static check for J position) ---
+    // J is like I but with pinky curved/rotated - check pinky is up and tilted
+    if (pinkyUp && !indexUp && !middleUp && !ringUp) {
+        const pinkyTilted = Math.abs(landmarks[20].x - landmarks[17].x) > 0.04;
+        if (pinkyTilted) {
+            return { gesture: 'J', confidence: 0.75 };
+        }
+    }
+
+    // --- M: Thumb under three fingers (index, middle, ring over thumb) ---
+    if (!indexUp && !middleUp && !ringUp && !pinkyUp) {
+        const thumbUnderFingers = landmarks[4].y > landmarks[8].y && 
+            landmarks[4].y > landmarks[12].y &&
+            landmarks[4].y > landmarks[16].y;
+        const fingersTogether = getDist(8, 12) < 0.05 && getDist(12, 16) < 0.05;
+        if (thumbUnderFingers && fingersTogether) {
+            return { gesture: 'M', confidence: 0.78 };
+        }
+    }
+
+    // --- N: Thumb under two fingers (index and middle over thumb) ---
+    if (!indexUp && !middleUp && !ringUp && !pinkyUp) {
+        const thumbUnderTwo = landmarks[4].y > landmarks[8].y && 
+            landmarks[4].y > landmarks[12].y &&
+            landmarks[4].y < landmarks[16].y;
+        const twoFingersTogether = getDist(8, 12) < 0.05;
+        if (thumbUnderTwo && twoFingersTogether && !ringCurled) {
+            return { gesture: 'N', confidence: 0.76 };
+        }
+    }
+
+    // --- P: Like K but pointing down (index and middle spread, pointing down) ---
+    const pointingDown = landmarks[8].y > landmarks[5].y && landmarks[12].y > landmarks[9].y;
+    if (pointingDown && !ringUp && !pinkyUp) {
+        const indexMiddleSpread = getDist(8, 12) > 0.06;
+        if (indexMiddleSpread && thumbExtendedOut) {
+            return { gesture: 'P', confidence: 0.75 };
+        }
+    }
+
+    // --- Q: Like G but pointing down (thumb and index pinch, pointing down) ---
+    const qPointingDown = landmarks[8].y > landmarks[5].y && landmarks[4].y > landmarks[3].y;
+    if (qPointingDown && !middleUp && !ringUp && !pinkyUp) {
+        const thumbIndexClose = getDist(4, 8) < 0.08;
+        if (thumbIndexClose) {
+            return { gesture: 'Q', confidence: 0.73 };
+        }
+    }
+
+    // --- R: Index and Middle crossed ---
+    if (!ringUp && !pinkyUp && !thumbUp) {
+        // Check if index and middle are crossed (index tip near middle MCP or vice versa)
+        const fingersCrossed = getDist(8, 9) < 0.05 || getDist(12, 5) < 0.05 ||
+            (landmarks[8].x > landmarks[12].x && landmarks[5].x < landmarks[9].x);
+        if (fingersCrossed && indexUp && middleUp) {
+            return { gesture: 'R', confidence: 0.80 };
+        }
+    }
+
+    // --- S: Fist with thumb across fingers ---
+    if (!indexUp && !middleUp && !ringUp && !pinkyUp) {
+        const thumbAcross = landmarks[4].x > landmarks[8].x && landmarks[4].x < landmarks[20].x;
+        const allTightCurl = indexCurled && middleCurled && ringCurled && pinkyCurled;
+        if (allTightCurl && thumbAcross) {
+            return { gesture: 'S', confidence: 0.82 };
+        }
+    }
+
+    // --- T: Thumb between index and middle (thumb tip visible between) ---
+    if (!indexUp && !middleUp && !ringUp && !pinkyUp) {
+        const thumbBetween = landmarks[4].x > landmarks[5].x && landmarks[4].x < landmarks[9].x;
+        const thumbVisible = landmarks[4].z < landmarks[8].z; // Thumb in front
+        if (thumbBetween && thumbVisible) {
+            return { gesture: 'T', confidence: 0.78 };
+        }
+    }
+
+    // --- Z: Index traces Z shape (dynamic, but check for diagonal position) ---
+    // Z starts with index pointing up-right, static approximation
+    if (indexUp && !middleUp && !ringUp && !pinkyUp) {
+        const indexDiagonal = landmarks[8].x > landmarks[5].x && 
+            Math.abs(landmarks[8].y - landmarks[5].y) < 0.08;
+        if (indexDiagonal && !thumbUp) {
+            return { gesture: 'Z', confidence: 0.70 };
+        }
     }
 
     // ============================================

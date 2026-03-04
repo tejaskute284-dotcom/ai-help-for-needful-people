@@ -32,3 +32,12 @@ dist-ssr
 venv/
 __pycache__/
 *.pyc
+
+# Security
+.env*
+logs/
+security-reports/
+*.pem
+*.key
+*.p12
+secrets/

@@ -1,151 +1,169 @@
 import { motion } from 'framer-motion';
-import { Eye, Ear, Hand, ArrowRight, Zap, Heart } from 'lucide-react';
-import type { Mode } from '../App';
+import { Eye, Ear, Hand, Heart, Cpu, Activity, ArrowRight } from 'lucide-react';
+import { useAccessibility } from '../context/AccessibilityContext';
 
-interface DashboardProps {
-    onSelectMode: (mode: Mode) => void;
-}
+const Dashboard = ({ onSelectMode }: { onSelectMode: (mode: any) => void }) => {
+    const { announce } = useAccessibility();
 
-const modes = [
-    {
-        id: 'blind' as Mode,
-        title: 'Blind Mode',
-        description: 'AI Voice Guidance • Object Recognition • Audio Cues',
-        icon: Eye,
-        color: 'from-brand-primary/10 to-brand-accent/10',
-        iconColor: 'text-brand-primary',
-        borderColor: 'border-brand-primary/30'
-    },
-    {
-        id: 'deaf' as Mode,
-        title: 'Deaf Mode',
-        description: 'Real-time Captions • Visual Sound Alerts • Lip Reading',
-        icon: Ear,
-        color: 'from-brand-secondary/10 to-orange-400/10',
-        iconColor: 'text-brand-secondary',
-        borderColor: 'border-brand-secondary/30'
-    },
-    {
-        id: 'sign' as Mode,
-        title: 'Sign Language',
-        description: 'Gesture Navigation • ASL Recognition • Avatar Feedback',
-        icon: Hand,
-        color: 'from-brand-purple/10 to-purple-400/10',
-        iconColor: 'text-brand-purple',
-        borderColor: 'border-brand-purple/30'
-    }
-];
+    const handleModeSelect = (mode: string, label: string) => {
+        announce(`${label} mode activated. Welcome to your personalized experience.`, 'success');
+        onSelectMode(mode);
+    };
 
-export default function Dashboard({ onSelectMode }: DashboardProps) {
+    const modes = [
+        {
+            id: "blind",
+            title: "Visual Aid",
+            description: "AI-powered vision for total independence",
+            icon: <Eye size={32} />,
+            gradient: "from-blue-500/20 to-brand-primary/10",
+            accent: "text-blue-400",
+            stats: "99.8% Object Accuracy"
+        },
+        {
+            id: "deaf",
+            title: "Hearing Support",
+            description: "Real-time sound-to-visual conversion",
+            icon: <Ear size={32} />,
+            gradient: "from-amber-500/20 to-orange-500/10",
+            accent: "text-amber-400",
+            stats: "Real-time Processing"
+        },
+        {
+            id: "sign",
+            title: "Gesture Studio",
+            description: "Smart sign language interpretation",
+            icon: <Hand size={32} />,
+            gradient: "from-emerald-500/20 to-teal-500/10",
+            accent: "text-emerald-400",
+            stats: "32 Gestures Supported"
+        }
+    ];
+
     return (
-        <div className="space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {modes.map((mode, index) => (
-                    <motion.button
+        <div className="space-y-16">
+            {/* Bento Mode Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {modes.map((mode, idx) => (
+                    <motion.div
                         key={mode.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 + index * 0.1 }}
-                        whileHover={{ y: -8, scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onSelectMode(mode.id)}
-                        className={`group relative text-left p-8 rounded-[2rem] glass-panel border ${mode.borderColor} overflow-hidden transition-all duration-300`}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        whileHover={{ y: -10 }}
+                        onClick={() => handleModeSelect(mode.id, mode.title)}
+                        className="group relative cursor-pointer"
                     >
-                        {/* Background Gradient */}
-                        <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                        <div className={`clay-card h-full p-8 relative overflow-hidden flex flex-col`}>
+                            {/* Background Glow */}
+                            <div className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${mode.gradient} blur-3xl group-hover:scale-150 transition-transform duration-700 opacity-50`} />
 
-                        <div className="relative z-10 flex flex-col h-full">
-                            <div className={`w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-12 group-hover:bg-gray-50 transition-colors`}>
-                                <mode.icon className={`w-8 h-8 ${mode.iconColor}`} />
+                            <div className={`w-16 h-16 rounded-2xl glass-panel flex items-center justify-center mb-8 ${mode.accent} shadow-2xl`}>
+                                {mode.icon}
                             </div>
 
-                            <h3 className="text-3xl font-bold mb-3 flex items-center gap-2 text-[#1A2847]">
-                                {mode.title}
-                                <ArrowRight className="w-6 h-6 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                            </h3>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className={`text-xs font-black uppercase tracking-widest ${mode.accent}`}>Recommended</span>
+                                    <div className={`h-px flex-1 bg-gradient-to-r from-white/20 to-transparent`} />
+                                </div>
+                                <h3 className="text-3xl font-black text-text-main mb-4 tracking-tight group-hover:translate-x-1 transition-transform">
+                                    {mode.title}
+                                </h3>
+                                <p className="text-text-muted font-medium mb-8 leading-relaxed">
+                                    {mode.description}
+                                </p>
+                            </div>
 
-                            <p className="text-gray-500 text-lg leading-relaxed">
-                                {mode.description}
-                            </p>
+                            <div className="flex items-center justify-between pt-6 border-t border-white/10">
+                                <span className="text-sm font-bold text-text-muted">{mode.stats}</span>
+                                <div className={`w-10 h-10 rounded-full glass-panel flex items-center justify-center group-hover:bg-brand-primary group-hover:text-white transition-all`}>
+                                    <ArrowRight size={20} />
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Decorative Corner Element */}
-                        <div className={`absolute -bottom-10 -right-10 w-24 h-24 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity ${mode.iconColor.replace('text', 'bg')}`} />
-                    </motion.button>
+                    </motion.div>
                 ))}
             </div>
 
-            {/* Comfort Meter & Stats */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-6"
-            >
-                <div className="clay-card rounded-3xl p-8 flex items-center justify-between overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="flex items-center gap-4 relative z-10">
-                        <div className="p-4 bg-rose-500/10 rounded-2xl">
-                            <Heart className="w-8 h-8 text-rose-400 fill-rose-400/20" />
+            {/* Experience Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    className="glass-panel p-8 rounded-[2.5rem] border border-white/20"
+                >
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl">
+                            <Heart size={24} />
                         </div>
                         <div>
-                            <h4 className="text-xl font-bold text-[#1A2847]">Emotional Connection</h4>
-                            <p className="text-gray-400 text-xs">Sync level: Deep</p>
+                            <h4 className="font-black text-text-main">Trust Map</h4>
+                            <p className="text-xs text-text-muted font-bold uppercase tracking-widest">Global Connection</p>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end relative z-10">
-                        <span className="text-4xl font-bold text-rose-400">98%</span>
-                        <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden mt-1">
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            whileInView={{ width: "94%" }}
+                            className="h-full bg-gradient-to-r from-rose-500 to-pink-500"
+                        />
+                    </div>
+                    <p className="mt-4 text-3xl font-black text-text-main">94% <span className="text-sm text-text-muted">Empathy Score</span></p>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="glass-panel p-8 rounded-[2.5rem] border border-white/20"
+                >
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-blue-500/20 text-blue-400 rounded-2xl">
+                            <Cpu size={24} />
+                        </div>
+                        <div>
+                            <h4 className="font-black text-text-main">Neural Sync</h4>
+                            <p className="text-xs text-text-muted font-bold uppercase tracking-widest">Processing Latency</p>
+                        </div>
+                    </div>
+                    <div className="flex items-end gap-2 h-12">
+                        {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
                             <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: '98%' }}
-                                className="h-full bg-rose-400"
+                                key={i}
+                                initial={{ height: 0 }}
+                                whileInView={{ height: `${h}%` }}
+                                className="flex-1 bg-brand-primary/40 rounded-t-sm"
                             />
-                        </div>
+                        ))}
                     </div>
-                </div>
+                    <p className="mt-4 text-3xl font-black text-text-main">12ms <span className="text-sm text-text-muted">Avg Response</span></p>
+                </motion.div>
 
-                <div className="clay-card rounded-3xl p-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-blue-500/10 rounded-2xl">
-                            <Zap className="w-8 h-8 text-blue-400" />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="glass-panel p-8 rounded-[2.5rem] border border-white/20"
+                >
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl">
+                            <Activity size={24} />
                         </div>
                         <div>
-                            <h4 className="text-xl font-bold text-[#1A2847]">AI Latency</h4>
-                            <p className="text-gray-400 text-xs">Edge processing enabled</p>
+                            <h4 className="font-black text-text-main">System Core</h4>
+                            <p className="text-xs text-text-muted font-bold uppercase tracking-widest">Neural Readiness</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xl font-medium text-[#1A2847]">12ms</span>
-                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping" />
+                        <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="font-bold text-emerald-400">Vision & Audio Intelligence Active</span>
                     </div>
-                </div>
-
-                <div className="clay-card rounded-3xl p-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-brand-primary/10 rounded-2xl">
-                            <Eye className="w-8 h-8 text-brand-primary" />
-                        </div>
-                        <div>
-                            <h4 className="text-xl font-bold text-[#1A2847]">Trust Pulse</h4>
-                            <p className="text-gray-400 text-xs">Verifying sensor integrity</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex gap-0.5 items-end h-6">
-                            {[0.4, 0.7, 0.5, 0.9, 0.6].map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    animate={{ height: ['20%', '100%', '20%'] }}
-                                    transition={{ repeat: Infinity, duration: 1, delay: i * 0.1 }}
-                                    className="w-1 bg-brand-primary rounded-full"
-                                    style={{ height: `${h * 100}%` }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
+                    <p className="mt-4 text-3xl font-black text-text-main">3 <span className="text-sm text-text-muted">Core Modules</span></p>
+                </motion.div>
+            </div>
         </div>
     );
-}
+};
+
+export default Dashboard;

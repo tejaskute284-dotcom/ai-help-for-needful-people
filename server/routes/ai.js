@@ -1,9 +1,18 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/security');
 const aiService = require('../services/aiService');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
-router.post('/process', verifyToken, async (req, res) => {
+router.post('/process', [
+    verifyToken,
+    body('feature').optional().isString().isLength({ max: 100 }).trim(),
+    body('action').optional().isString().isLength({ max: 500 }).trim(),
+    body('message').optional().isString().isLength({ max: 2000 }).trim()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
     const { feature, action, message } = req.body;
     const targetFeature = feature || "Conversational AI";
     const targetAction = action || message || "General Inquiry";
@@ -18,7 +27,13 @@ router.post('/process', verifyToken, async (req, res) => {
 });
 
 // Alias for converse
-router.post('/converse', verifyToken, async (req, res) => {
+router.post('/converse', [
+    verifyToken,
+    body('message').isString().notEmpty().isLength({ max: 2000 }).trim()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
     const { message } = req.body;
     try {
         const response = await aiService.processAccessibilityRequest("Conversational AI", message || "Hello");

@@ -1,50 +1,56 @@
 import { Mic, Eye, Type, MessageSquare, Contrast, Shield } from 'lucide-react';
-import { FloatingCard } from './FloatingCard';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { api } from '../services/api';
 
 const features = [
     {
-        icon: <Mic className="text-primary" />,
+        icon: <Mic className="w-8 h-8" />,
         title: "Voice Navigation",
         description: "Navigate complex interfaces using only your voice with zero latency.",
-        className: "md:col-span-2 md:row-span-2 bg-brand-primary/5",
-        action: "Listening for commands..."
+        className: "md:col-span-2 md:row-span-2 bg-brand-primary/10 border-brand-primary/20",
+        action: "Listening for commands…",
+        iconColor: "text-brand-primary"
     },
     {
-        icon: <Eye className="text-secondary" />,
-        title: "Screen Reader AI",
-        description: "Deep content understanding that describes images and complex layouts.",
-        className: "md:col-span-1 md:row-span-1 bg-brand-purple/5",
-        action: "Analyzing screen content..."
+        icon: <Eye className="w-6 h-6" />,
+        title: "Screen AI",
+        description: "Deep content understanding for images.",
+        className: "md:col-span-1 md:row-span-1 bg-brand-purple/10 border-brand-purple/20",
+        action: "Analyzing screen content…",
+        iconColor: "text-brand-purple"
     },
     {
-        icon: <Type className="text-primary" />,
-        title: "Real-time Captions",
-        description: "Instant, accurate medical-grade captions for all audio interactions.",
-        className: "md:col-span-1 md:row-span-2 bg-brand-secondary/5",
-        action: "Generating captions..."
+        icon: <Type className="w-6 h-6" />,
+        title: "CapSync",
+        description: "Instant, accurate medical-grade captions.",
+        className: "md:col-span-1 md:row-span-2 bg-brand-secondary/10 border-brand-secondary/20",
+        action: "Generating captions…",
+        iconColor: "text-brand-secondary"
     },
     {
-        icon: <MessageSquare className="text-secondary" />,
+        icon: <MessageSquare className="w-6 h-6" />,
         title: "Sign Trans",
-        description: "Vision that translates sign language to text.",
-        className: "md:col-span-1 md:row-span-1 bg-brand-accent/5",
-        action: "Detecting gestures..."
+        description: "Vision that translates sign language.",
+        className: "md:col-span-1 md:row-span-1 bg-brand-accent/10 border-brand-accent/20",
+        action: "Detecting gestures…",
+        iconColor: "text-brand-accent"
     },
     {
-        icon: <Contrast className="text-primary" />,
+        icon: <Contrast className="w-8 h-8" />,
         title: "Smart Contrast",
-        description: "Dynamic color adjustments tailored to individual visual needs.",
-        className: "md:col-span-2 md:row-span-1 bg-brand-secondary/5",
-        action: "Optimizing colors..."
+        description: "Dynamic color adjustments tailored to individual needs.",
+        className: "md:col-span-2 md:row-span-1 bg-white/[0.03] border-white/10",
+        action: "Optimizing colors…",
+        iconColor: "text-white"
     },
     {
-        icon: <Shield className="text-secondary" />,
-        title: "Secure Auth",
-        description: "Advanced biometric and multi-factor security for your data.",
-        className: "md:col-span-1 md:row-span-1 bg-red-400/5",
-        action: "Verifying identity..."
+        icon: <Shield className="w-6 h-6" />,
+        title: "Biometrics",
+        description: "Advanced biometric security.",
+        className: "md:col-span-1 md:row-span-1 bg-red-500/10 border-red-500/20",
+        action: "Verifying identity…",
+        iconColor: "text-red-400"
     }
 ];
 
@@ -57,12 +63,9 @@ export const Features = () => {
         setAiResponse(null);
 
         try {
-            // Only attempt AI call if logged in, otherwise show immediate fallback
             const response = await api.post('/ai/process', { feature: title, action });
             setAiResponse(response.response);
         } catch (error) {
-            console.error("AI Feature Error:", error);
-            // Fallback for non-logged in or error state
             setAiResponse(action);
         }
 
@@ -73,41 +76,50 @@ export const Features = () => {
     };
 
     return (
-        <section id="features" className="py-24 px-6 bg-white/[0.02]">
-            <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-4 text-[#1A2847]">AI Features</h2>
-                    <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                        Breaking digital barriers with our advanced **Bento Box** powered ecosystem.
-                    </p>
+        <section id="features" className="py-24 relative overflow-hidden">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+                    <div>
+                        <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter">AI Capabilities</h2>
+                        <p className="text-xl text-slate-400 max-w-xl font-medium">
+                            Breaking digital barriers with our advanced <span className="text-white">Bento Ecosystem</span>.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bento-grid">
                     {features.map((feature, index) => (
-                        <FloatingCard
+                        <motion.div
                             key={index}
-                            delay={index * 0.1}
-                            className={`group hover:border-primary/30 cursor-pointer overflow-hidden relative ${feature.className}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.1 }}
                             onClick={() => handleFeatureClick(feature.title, feature.action)}
+                            className={`group p-8 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-500 cursor-pointer relative overflow-hidden flex flex-col justify-between ${feature.className} hover:scale-[1.02] hover:shadow-2xl`}
                         >
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                            <div className="relative z-10 h-full flex flex-col">
-                                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <div>
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-black/20 border border-white/5 ${feature.iconColor} group-hover:scale-110 transition-transform duration-500`}>
                                     {feature.icon}
                                 </div>
-                                <h3 className="text-xl font-bold mb-2 text-[#1A2847]">{feature.title}</h3>
-                                <p className="text-gray-500 leading-relaxed text-sm flex-grow">
+                                <h3 className="text-2xl font-bold mb-3 tracking-tight">{feature.title}</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">
                                     {feature.description}
                                 </p>
-
-                                {activeAction === feature.action && (
-                                    <div className="mt-4 py-2 px-3 bg-primary/20 rounded-lg text-xs font-medium text-primary animate-pulse border border-primary/20">
-                                        {aiResponse || 'AI is thinking...'}
-                                    </div>
-                                )}
                             </div>
-                        </FloatingCard>
+
+                            {activeAction === feature.action && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    className="mt-6 py-3 px-4 bg-white/10 rounded-2xl text-sm font-bold text-white border border-white/10"
+                                >
+                                    {aiResponse || 'AI is thinking…'}
+                                </motion.div>
+                            )}
+                        </motion.div>
                     ))}
                 </div>
             </div>

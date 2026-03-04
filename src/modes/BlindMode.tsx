@@ -4,7 +4,7 @@ import Webcam from 'react-webcam';
 import { ChevronLeft, Eye, EyeOff, AlertCircle, Box, Type } from 'lucide-react';
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import { useToast } from '../context/ToastContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 import { LoadingOverlay } from '../components/ui/LoadingOverlay';
 
 interface BlindModeProps {
@@ -12,31 +12,25 @@ interface BlindModeProps {
 }
 
 export default function BlindMode({ onBack }: BlindModeProps) {
-    const [lastAnnouncement, setLastAnnouncement] = useState('');
+    const { announce: accessibilityAnnounce, playAudio, haptic } = useAccessibility();
     const [isScanning, setIsScanning] = useState(false);
     const [model, setModel] = useState<cocoSsd.ObjectDetection | null>(null);
     const [predictions, setPredictions] = useState<cocoSsd.DetectedObject[]>([]);
     const [permissionState, setPermissionState] = useState<'granted' | 'denied' | 'prompt' | 'error'>('prompt');
     const [showVisuals, setShowVisuals] = useState(true);
+    const [lastAnnouncement, setLastAnnouncement] = useState('');
+
     const webcamRef = useRef<Webcam>(null);
     const requestRef = useRef<number | null>(null);
     const lastSpokenTime = useRef<number>(0);
     const detectionCountRef = useRef<{ [key: string]: number }>({});
-    const isSpeakingRef = useRef<boolean>(false);
 
-    const { showToast } = useToast();
-
-    // Text-to-Speech Helper
-    const announce = useCallback((text: string, force = false) => {
+    // Text-to-Speech Helper integrated with Accessibility Context
+    const announce = useCallback((text: string, force = false, type: 'info' | 'success' | 'error' | 'ai' = 'info') => {
         const now = Date.now();
 
-        // 1. Minimum silence between ANY announcements (1.5 seconds)
-        if (!force && (now - lastSpokenTime.current < 1500)) return;
-
-        // 2. Longer debounce for the SAME message (4 seconds)
-        if (!force && (text === lastAnnouncement) && (now - lastSpokenTime.current < 4000)) return;
-
-        // 3. Don't interrupt unless forced
+        if (!force && (now - lastSpokenTime.current < 4000)) return; // 4s Gap between ANY object
+        if (!force && (text === lastAnnouncement) && (now - lastSpokenTime.current < 8000)) return; // 8s Gap for SAME object
         if (!force && window.speechSynthesis.speaking) return;
 
         if (!('speechSynthesis' in window)) return;
@@ -45,48 +39,45 @@ export default function BlindMode({ onBack }: BlindModeProps) {
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 1.0;
-        utterance.onstart = () => { isSpeakingRef.current = true; };
-        utterance.onend = () => { isSpeakingRef.current = false; };
+
+        // Trigger accessibility feedback
+        playAudio(type);
+        haptic(type === 'error' ? [50, 50, 50] : 10);
+        accessibilityAnnounce(text, type);
 
         window.speechSynthesis.speak(utterance);
         lastSpokenTime.current = now;
         setLastAnnouncement(text);
-    }, [lastAnnouncement]);
+    }, [lastAnnouncement, accessibilityAnnounce, playAudio, haptic]);
 
     // Initial Permission & Model Load
     useEffect(() => {
         const checkPermissionsAndLoad = async () => {
             try {
-                // Check Camera Permission
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // Stop tracks immediately after check to let Webcam component take over
                 stream.getTracks().forEach(track => track.stop());
                 setPermissionState('granted');
 
-                // Load AI Model
                 await tf.ready();
                 const loadedModel = await cocoSsd.load();
                 setModel(loadedModel);
 
-                showToast("Visual Cortex Ready", "success", "Object detection system initialized.");
-                const readyMsg = 'Visual cortex ready. I can now see objects around you.';
-                announce(readyMsg);
+                announce('Visual cortex ready. I can now see objects around you.', true, 'success');
                 setIsScanning(true);
             } catch (err: any) {
                 console.error("Initialization error:", err);
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                     setPermissionState('denied');
-                    showToast("Camera Access Denied", "error", "Please enable camera permissions in settings.");
-                    announce("Camera access denied. Please enable camera permissions.");
+                    announce("Camera access denied. Please enable camera permissions.", true, 'error');
                 } else {
                     setPermissionState('error');
-                    showToast("System Error", "error", err.message || "Failed to initialize AI.");
-                    setLastAnnouncement("System error. Please check connection and refresh.");
+                    setLastAnnouncement(err.message || "Failed to initialize AI.");
+                    announce("System error. Please check connection and refresh.", true, 'error');
                 }
             }
         };
         checkPermissionsAndLoad();
-    }, [announce, showToast]);
+    }, [announce]);
 
     // Detection Loop
     const detect = useCallback(async () => {
@@ -96,20 +87,34 @@ export default function BlindMode({ onBack }: BlindModeProps) {
             setPredictions(preds);
 
             if (preds.length > 0) {
-                // Find potential candidates
-                const candidates = preds.filter(p => p.score > 0.65);
+                // LOWERED THRESHOLD: 0.55 (More sensitive detection)
+                const candidates = preds.filter(p => p.score > 0.55);
 
                 if (candidates.length > 0) {
                     const best = candidates.reduce((prev, curr) => (prev.score > curr.score) ? prev : curr);
-
-                    // Persistence Check: Must be seen in 2 consecutive frames
                     const count = (detectionCountRef.current[best.class] || 0) + 1;
                     detectionCountRef.current = { [best.class]: count };
 
-                    if (count >= 2) {
-                        announce(`I see a ${best.class}`);
-                        // Reset count after announcement to prevent immediate repeat
-                        detectionCountRef.current[best.class] = -10; // Lighter penalty
+                    // REQUIRE 3 CONSECUTIVE FRAMES (Faster response)
+                    if (count >= 3) {
+                        // Calculate object position (left, center, right)
+                        const videoWidth = video.videoWidth;
+                        const objectCenterX = best.bbox[0] + best.bbox[2] / 2;
+                        const relativeX = objectCenterX / videoWidth;
+
+                        let position = 'ahead';
+                        if (relativeX < 0.35) position = 'on your left';
+                        else if (relativeX > 0.65) position = 'on your right';
+
+                        // Estimate distance based on bounding box size
+                        const boxArea = (best.bbox[2] * best.bbox[3]) / (videoWidth * video.videoHeight);
+                        let distance = '';
+                        if (boxArea > 0.3) distance = 'very close, ';
+                        else if (boxArea > 0.15) distance = 'nearby, ';
+                        else if (boxArea < 0.03) distance = 'in the distance, ';
+
+                        announce(`I see a ${best.class} ${distance}${position}`, false, 'ai');
+                        detectionCountRef.current[best.class] = -15; // Refractory period
                     }
                 } else {
                     detectionCountRef.current = {};
@@ -132,24 +137,22 @@ export default function BlindMode({ onBack }: BlindModeProps) {
         };
     }, [isScanning, model, detect]);
 
-    // Cleanup speech on unmount
     useEffect(() => {
         return () => window.speechSynthesis.cancel();
     }, []);
 
-    // Render Permission States
     if (permissionState === 'denied') {
         return (
-            <div className="flex flex-col items-center justify-center h-[600px] glass-panel rounded-[2.5rem] p-8 text-center space-y-6">
-                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center animate-pulse">
-                    <EyeOff className="w-12 h-12 text-red-500" />
+            <div className="flex flex-col items-center justify-center h-[600px] glass-panel rounded-[3.5rem] p-8 text-center space-y-8">
+                <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center animate-pulse">
+                    <EyeOff className="w-12 h-12 text-rose-500" />
                 </div>
-                <h3 className="text-3xl font-bold">Camera Access Required</h3>
-                <p className="text-white/60 max-w-md text-lg">
-                    We need your camera to help you see the world. Please enable access in your browser settings.
+                <h3 className="text-4xl font-black text-text-main">Camera Required</h3>
+                <p className="text-text-muted text-lg font-medium max-w-md">
+                    We need your camera to help you see the world. Please enable access in your settings.
                 </p>
-                <button onClick={onBack} className="px-8 py-4 bg-white/10 hover:bg-white/20 rounded-2xl font-bold transition-colors">
-                    Back to Home
+                <button onClick={onBack} className="px-12 py-5 bg-brand-primary text-white rounded-[1.5rem] font-bold shadow-2xl shadow-brand-primary/20">
+                    Go Back
                 </button>
             </div>
         );
@@ -157,16 +160,16 @@ export default function BlindMode({ onBack }: BlindModeProps) {
 
     if (permissionState === 'error') {
         return (
-            <div className="flex flex-col items-center justify-center h-[600px] glass-panel rounded-[2.5rem] p-8 text-center space-y-6">
-                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center">
-                    <AlertCircle className="w-12 h-12 text-red-500" />
+            <div className="flex flex-col items-center justify-center h-[600px] glass-panel rounded-[3.5rem] p-8 text-center space-y-8">
+                <div className="w-24 h-24 bg-rose-500/10 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-12 h-12 text-rose-500" />
                 </div>
-                <h3 className="text-3xl font-bold">System Error</h3>
-                <p className="text-white/60 max-w-md text-lg">
+                <h3 className="text-4xl font-black text-text-main">System Error</h3>
+                <p className="text-text-muted text-lg font-medium max-w-md">
                     {lastAnnouncement}
                 </p>
-                <button onClick={() => window.location.reload()} className="px-8 py-4 bg-purple-500 hover:bg-purple-600 rounded-2xl font-bold transition-colors">
-                    Retry
+                <button onClick={() => window.location.reload()} className="px-12 py-5 bg-brand-primary text-white rounded-[1.5rem] font-bold">
+                    Retry Calibration
                 </button>
             </div>
         );
@@ -176,70 +179,50 @@ export default function BlindMode({ onBack }: BlindModeProps) {
         <div className="space-y-8 relative">
             <AnimatePresence>
                 {!model && permissionState === 'prompt' && (
-                    <LoadingOverlay message="Initializing Vision" subMessage="Loading neural networks..." />
+                    <LoadingOverlay message="Activating Vision" subMessage="Charging Neural Pulse…" />
                 )}
             </AnimatePresence>
 
-            {/* Header Controls */}
-            <div className="flex justify-between items-center">
-                <button
-                    onClick={onBack}
-                    className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors border border-white/10"
-                >
+            <div className="flex justify-between items-center gap-4">
+                <button onClick={onBack} className="p-5 glass-panel rounded-2xl hover:bg-white/10 transition-all border border-white/20">
                     <ChevronLeft size={24} />
                 </button>
-                <div className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-2xl border border-white/10">
-                    <Eye size={20} className={isScanning ? "text-green-400" : "text-white/40"} />
-                    <span className="font-bold tracking-wide">
-                        {isScanning ? "SCANNING ACTIVE" : "PAUSED"}
+                <div className="flex-1 glass-panel h-14 flex items-center px-6 rounded-2xl border border-white/10">
+                    <div className={`w-3 h-3 rounded-full mr-4 ${isScanning ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-white/20'}`} />
+                    <span className="font-black text-xs uppercase tracking-widest text-text-main">
+                        {isScanning ? "Neural Stream Active" : "Vision Paused"}
                     </span>
-                    {isScanning && (
-                        <span className="flex h-3 w-3 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                        </span>
-                    )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-3">
                     <button
                         onClick={() => setShowVisuals(!showVisuals)}
-                        title={showVisuals ? "Hide Visual Feedback" : "Show Visual Feedback"}
-                        className={`p-4 rounded-2xl transition-all border ${showVisuals
-                            ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/30'
-                            : 'bg-white/5 text-white/40 border-white/10'
-                            }`}
+                        className={`p-5 rounded-2xl transition-all border ${showVisuals ? 'bg-brand-primary text-white border-brand-primary shadow-xl shadow-brand-primary/20' : 'glass-panel text-text-muted border-white/10'}`}
                     >
                         <Box size={24} />
                     </button>
                     <button
                         onClick={() => setIsScanning(!isScanning)}
-                        className={`p-4 rounded-2xl transition-all duration-300 ${isScanning
-                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30'
-                            : 'bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30'
-                            }`}
+                        className={`p-5 rounded-2xl transition-all border ${isScanning ? 'bg-rose-500 text-white border-rose-500 shadow-xl shadow-rose-500/20' : 'bg-emerald-500 text-white border-emerald-500 shadow-xl shadow-emerald-500/20'}`}
                     >
                         {isScanning ? <EyeOff size={24} /> : <Eye size={24} />}
                     </button>
                 </div>
             </div>
 
-            {/* Main Viewfinder */}
-            <div className={`relative aspect-[4/3] rounded-[2.5rem] overflow-hidden border-2 transition-all duration-500 ${showVisuals ? 'border-brand-primary/30 shadow-[0_0_50px_rgba(var(--brand-primary-rgb),0.15)]' : 'border-white/10 shadow-2xl'
-                } bg-black`}>
+            <div className="clay-card aspect-[4/3] rounded-[3.5rem] overflow-hidden relative shadow-2xl border border-white/20 bg-black">
                 <Webcam
                     ref={webcamRef}
                     audio={false}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover grayscale-[0.2] brightness-110"
                     videoConstraints={{ facingMode: "environment" }}
                 />
 
-                {/* Bounding Boxes */}
                 {showVisuals && predictions.map((pred, i) => (
                     <motion.div
                         key={i}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="absolute border-2 border-brand-primary/80 bg-brand-primary/10 rounded-lg flex flex-col items-start p-1"
+                        className="absolute border-2 border-brand-primary/60 bg-brand-primary/5 rounded-2xl backdrop-blur-[2px] pointer-events-none"
                         style={{
                             left: pred.bbox[0],
                             top: pred.bbox[1],
@@ -247,32 +230,43 @@ export default function BlindMode({ onBack }: BlindModeProps) {
                             height: pred.bbox[3],
                         }}
                     >
-                        <span className="text-xs font-bold px-2 py-1 bg-brand-primary text-white rounded-md shadow-sm">
-                            {pred.class} {Math.round(pred.score * 100)}%
-                        </span>
+                        <div className="absolute top-0 left-0 -translate-y-full pb-2">
+                            <span className="px-3 py-1 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-xl">
+                                {pred.class} {Math.round(pred.score * 100)}%
+                            </span>
+                        </div>
                     </motion.div>
                 ))}
+
+                {/* Scanning Line Animation */}
+                {isScanning && (
+                    <motion.div
+                        initial={{ top: "0%" }}
+                        animate={{ top: "100%" }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-brand-primary to-transparent opacity-50 z-10 pointer-events-none"
+                    />
+                )}
             </div>
 
-            {/* Object List */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="glass-panel p-5 rounded-3xl flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400">
-                        <Box size={24} />
+            <div className="grid grid-cols-2 gap-6">
+                <div className="glass-panel p-6 rounded-3xl flex items-center gap-5 border border-white/10">
+                    <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400">
+                        <Box size={28} />
                     </div>
                     <div>
-                        <p className="text-white/40 text-sm font-medium">Objects Detected</p>
-                        <p className="text-2xl font-bold">{predictions.length}</p>
+                        <p className="text-text-muted text-xs font-black uppercase tracking-widest mb-1">Stream Content</p>
+                        <p className="text-2xl font-black text-text-main">{predictions.length} Objects</p>
                     </div>
                 </div>
-                <div className="glass-panel p-5 rounded-3xl flex items-center gap-4">
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400">
-                        <Type size={24} />
+                <div className="glass-panel p-6 rounded-3xl flex items-center gap-5 border border-white/10">
+                    <div className="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-400">
+                        <Type size={28} />
                     </div>
                     <div>
-                        <p className="text-white/40 text-sm font-medium">Description</p>
-                        <p className="text-sm font-bold truncate max-w-[120px]">
-                            {predictions.length > 0 ? predictions[0].class : 'Scanning...'}
+                        <p className="text-text-muted text-xs font-black uppercase tracking-widest mb-1">Focus Target</p>
+                        <p className="text-lg font-black text-text-main truncate max-w-[120px]">
+                            {predictions.length > 0 ? predictions[0].class : 'Calibrating…'}
                         </p>
                     </div>
                 </div>

@@ -13,10 +13,14 @@ const getAccessibilityScoreTrend = () => [
     { name: 'Sun', score: 95 },
 ];
 
-let globalStatsCounter = 0;
+const persistenceService = require('../services/persistenceService');
+
+let stats = persistenceService.load('dashboard_stats.json', { globalStatsCounter: 0 });
+let globalStatsCounter = stats.globalStatsCounter;
 
 router.get('/stats', verifyToken, (req, res) => {
     globalStatsCounter += 1;
+    persistenceService.save('dashboard_stats.json', { globalStatsCounter });
     res.json({
         totalScans: 1240 + globalStatsCounter,
         issuesFixed: 856 + globalStatsCounter,

@@ -1,86 +1,114 @@
 {
   "meta": {
-    "project": "Accessibility Companion - AI for Everyone",
-    "date": "2026-01-29",
-    "prepared_by": "Team Accessibility Companion"
+    "project": "Accessibility AI",
+    "date": "2026-02-04",
+    "prepared_by": "Software Development Manager"
   },
-  "product_overview": "The Accessibility Companion is an AI-powered accessibility layer that enhances existing websites to be usable by people with various disabilities, including vision, hearing, motor, and cognitive challenges. It integrates real-time speech-to-text, text-to-speech, hand gesture recognition, text formatting with dyslexia-friendly fonts and color themes, and voice command features, aiming to make the web universally accessible.",
+  "product_overview": "Accessibility AI is a comprehensive web application leveraging AI technologies to enhance digital accessibility for all users, including those with visual, hearing, and communication impairments. The platform integrates real-time AI-powered features such as voice navigation, screen reading, sign language recognition, and adaptive visual enhancements via an interactive dashboard and secure authentication.",
   "core_goals": [
-    "Enable real-time speech-to-text transcription for deaf and hard-of-hearing users.",
-    "Provide intelligent text-to-speech capabilities for blind and low vision users.",
-    "Detect and classify hand gestures to allow motor-disabled users to control web interfaces hands-free.",
-    "Offer text formatting options including dyslexia-friendly fonts, adjustable font sizes, spacing, and high contrast color themes for cognitive accessibility.",
-    "Support voice commands for basic website interaction and navigation.",
-    "Create an intuitive and responsive user interface accessible on desktop and mobile browsers.",
-    "Deliver all features as a client-side web app with optional backend APIs for speech recognition and gesture processing."
+    "Provide advanced AI-driven accessibility tools for visually impaired, hearing impaired, and sign language users.",
+    "Offer seamless and secure user authentication and profile management.",
+    "Enable real-time interaction with accessibility aids using low-latency AI processing.",
+    "Visualize accessibility statistics and compliance metrics via an intuitive dashboard.",
+    "Ensure robust security compliance including JWT authentication, rate limiting, and input validation."
   ],
   "key_features": [
-    "Real-Time Speech-to-Text with live transcript panel using Google Speech-to-Text API.",
-    "Text-to-Speech capability with selectable voice options, speed control, and text highlighting during playback.",
-    "Hand Gesture Recognition using MediaPipe and custom heuristics to detect five common gestures and map them to web actions like click, scroll, pause, and play.",
-    "Voice Command Parser to handle common commands such as 'click', 'scroll down/up', and 'read this' with simple keyword matching.",
-    "Text Formatting and Simplification including dyslexia-friendly fonts, adjustable font size, line and letter spacing, and multiple high contrast color themes.",
-    "Accessibility Toolbar providing toggles and settings for all features in a unified UI accessible on multiple devices.",
-    "Fully responsive and accessible UI components built with React and Tailwind CSS."
+    "AI-Powered Bento Box delivering voice navigation, screen reader AI, accurate real-time captions, and sign language translation.",
+    "Multi-modal accessibility including Blind Mode with object detection and text-to-speech feedback, Deaf Mode with speech-to-text and sound event detection, and Sign Language Interpreter using vision-based gesture recognition.",
+    "Interactive dashboard for mode selection, accessibility statistics, and trend visualization with Recharts.",
+    "Secure authentication flow supporting registration, login, JWT token-based sessions, and multi-factor security.",
+    "Responsive UI developed with React, TypeScript, Tailwind CSS, and enhanced with Framer Motion animations.",
+    "Backend architecture combining Node.js Express API with Python Flask services for advanced gesture processing and AI integration.",
+    "Security features including password hashing with bcrypt, helmet and CORS middleware, and brute-force protection."
   ],
   "user_flow_summary": [
-    "User launches the Accessibility Companion web app or extension.",
-    "User selects a mode or feature from the accessibility toolbar: Text-to-Speech, Speech-to-Text, Hand Gesture Recognition, or Text Formatting.",
-    "For Speech-to-Text, user enables microphone access, speaks, and sees real-time transcription on screen with options to copy or save.",
-    "For Text-to-Speech, user selects text on any webpage and uses the tool to listen to it, adjusting voice speed and type as needed.",
-    "For Hand Gesture Recognition, user grants camera access and performs gestures which the system detects and maps to website navigation actions with on-screen visual feedback.",
-    "Users customize text formatting options to improve readability, choosing fonts, sizes, spacing, and color themes.",
-    "Voice commands can be spoken and parsed to interact with the website for basic control.",
-    "Settings persist during the session and can be saved, with fallback and demo modes available during errors or outages."
+    "User lands on home page and navigates to Join Us via Navbar to register/login.",
+    "Upon successful authentication, user accesses the Dashboard to select modes and view accessibility metrics.",
+    "User interacts with AI-powered Bento Box feature cards to engage voice navigation, screen reader, captions, or sign language translator.",
+    "In Blind Mode, system detects objects visually and provides spoken feedback.",
+    "In Deaf Mode, system transcribes speech to text and detects environmental sounds in real-time.",
+    "In Sign Language Mode, the system uses webcam input for gesture recognition and translates signs to text output.",
+    "User can manage profile and accessibility preferences through Settings Dropdown accessible from Navbar."
   ],
   "validation_criteria": [
-    "Speech-to-Text transcriptions appear in real-time with over 85% accuracy on typical speech samples.",
-    "Text-to-Speech reads selected text aloud with correct voice and speed settings and highlights text during playback.",
-    "Hand Gesture Recognition accurately detects and classifies at least 5 gestures with confidence above 80%, triggering mapped actions reliably.",
-    "Voice commands are parsed correctly for predefined keywords and produce expected interface responses.",
-    "Text formatting applies correctly and changes reflect immediately on the webpage, improving readability for dyslexic and cognitive users.",
-    "API endpoints for gesture detection and command execution respond within 200ms under normal load.",
-    "The UI components are fully responsive, accessible (keyboard navigation, screen reader friendly), and pass WCAG contrast guidelines.",
-    "All features handle errors gracefully with fallback modes or demo data to maintain usability during failures."
+    "All accessibility modes must accurately perform AI-powered detection and translation functions with minimal latency.",
+    "Authentication processes must securely manage JWT tokens and protect against brute-force attacks.",
+    "Dashboard must correctly display real-time accessibility statistics and trends with no visual or data errors.",
+    "All UI components must be responsive and accessible according to WCAG guidelines.",
+    "Backend API endpoints must validate and sanitize all inputs to prevent security vulnerabilities.",
+    "End-to-end integration between Node.js backend and Python gesture service must be reliable with consistent API response times."
   ],
   "code_summary": {
     "tech_stack": [
       "TypeScript",
       "React",
       "Vite",
-      "Tailwind CSS",
+      "TailwindCSS",
+      "Node.js",
+      "Express",
+      "Python",
+      "Flask",
       "TensorFlow.js",
       "MediaPipe"
     ],
     "features": [
       {
-        "name": "Blind Mode",
-        "description": "Object detection using TensorFlow.js COCO-SSD model with text-to-speech announcements.",
+        "name": "Main Application",
+        "description": "Root component managing routing, authentication state, and mode selection.",
+        "files": [
+          "src/App.tsx",
+          "src/main.tsx"
+        ]
+      },
+      {
+        "name": "Visual Aid (Blind Mode)",
+        "description": "Object detection using COCO-SSD with text-to-speech feedback.",
         "files": [
           "src/modes/BlindMode.tsx"
         ]
       },
       {
-        "name": "Deaf Mode",
-        "description": "Real-time speech-to-text transcription for deaf users, with visual sound alerts.",
+        "name": "Hearing Support (Deaf Mode)",
+        "description": "Real-time speech-to-text and sound event detection.",
         "files": [
           "src/modes/DeafMode.tsx"
         ]
       },
       {
-        "name": "Sign Language Mode",
-        "description": "ASL gesture recognition using MediaPipe and custom heuristics for alphabet/numbers.",
+        "name": "Sign Language Interpreter",
+        "description": "Gesture recognition for ASL using MediaPipe and custom heuristics.",
         "files": [
           "src/modes/SignLanguageMode.tsx",
-          "src/features/vision/aslHeuristics.ts",
-          "src/features/vision/useHandGesture.ts"
+          "src/features/vision/aslHeuristics.ts"
         ]
       },
       {
         "name": "Dashboard",
-        "description": "Main navigation hub for accessing different accessibility modes.",
+        "description": "Main dashboard for selecting modes and viewing metrics.",
         "files": [
           "src/components/Dashboard.tsx"
+        ]
+      },
+      {
+        "name": "Navigation & Settings",
+        "description": "Navbar and Settings dropdown for profile and accessibility controls.",
+        "files": [
+          "src/components/Navbar.tsx",
+          "src/components/SettingsDropdown.tsx"
+        ]
+      },
+      {
+        "name": "Node.js Backend",
+        "description": "Express server handling API requests and proxying to Python service.",
+        "files": [
+          "server/index.js"
+        ]
+      },
+      {
+        "name": "Python Gesture Service",
+        "description": "Flask API for advanced gesture processing.",
+        "files": [
+          "backend/api/app.py"
         ]
       }
     ]

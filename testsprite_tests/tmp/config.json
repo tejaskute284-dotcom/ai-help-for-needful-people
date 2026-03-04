@@ -1,16 +1,20 @@
 {
   "status": "commited",
-  "type": "frontend",
+  "type": "backend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:5173",
+  "localEndpoint": "http://localhost:5000",
+  "backendAuthType": "API key",
+  "backendApiKey": "Antigravity",
+  "backendApiValue": "sbp_4ec20156f8a932a6f8d0647d2e6b0d93a4c0251f",
   "executionArgs": {
-    "projectName": "accessibility-ai",
+    "projectName": "ai-help-for-needful-people",
     "projectPath": "d:\\AARYAN\\HACKATHONS\\ACCESSIBILITY AI\\CODES\\ai-help-for-needful-people",
     "testIds": [],
-    "additionalInstruction": "Execute tests again. All speech synthesis issues should be fixed now.",
+    "additionalInstruction": "Final verification run for backend hardening. Verify rate limits (1000 requests), persistence across 'restarts' (simulation), and all route aliases. Address any lingering connectivity issues if possible.",
     "envs": {
-      "API_KEY": "sk-user-yE_qRnIlwq4as4tnV4SX6ZhuZBHDO-ZSIBS88AIC2iW4yVuGclDoXVUViNKQD6KNp9ZXPvXvIg920OxAMhLQLugh-2xgO0Wg9CI_rshconWvC8eL9-h2N6PxQjFuOSMtBRQ"
+      "API_KEY": "sk-user-xMMwdxmlAWxiADI9lZsVD49vclYjPRne4Ntp3L_K6rOYFk3FkBIpC0V6ijq2K5SiRtYo1sMu7pqVFsXvVTwLpSYnBWmLUjxkTiS1aeRahp06eWnJtYjwPNRw89D6geX99w0"
     }
   },
-  "proxy": "http://d3ff4db3-e5d7-457b-aaea-ab9fd2d54352:kkCCe0ViUtcNLmV6SLAtETs7OYHq039M@tun.testsprite.com:8080"
+  "serverPort": 62450,
+  "proxy": "http://4afcc567-5484-4e84-b2b5-3e423bb34bd3:Jf5e39EAPukgIrbMOcnM8S8138UNwNYj@tun.testsprite.com:8080"
 }

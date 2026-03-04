@@ -16,6 +16,8 @@ export const Impact = () => {
                             <img
                                 src="/diverse_users_accessibility.png"
                                 alt="Diverse people using accessible technology"
+                                width={600}
+                                height={600}
                                 className="w-full h-full object-cover grayscale-[0.2] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

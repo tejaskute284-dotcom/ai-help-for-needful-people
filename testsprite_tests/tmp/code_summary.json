@@ -1,42 +1,75 @@
 {
-  "tech_stack": [
-    "TypeScript",
-    "React",
-    "Vite",
-    "Tailwind CSS",
-    "TensorFlow.js",
-    "MediaPipe"
-  ],
-  "features": [
-    {
-      "name": "Blind Mode",
-      "description": "Object detection using TensorFlow.js COCO-SSD model with text-to-speech announcements.",
-      "files": [
-        "src/modes/BlindMode.tsx"
-      ]
-    },
-    {
-      "name": "Deaf Mode",
-      "description": "Real-time speech-to-text transcription for deaf users, with visual sound alerts.",
-      "files": [
-        "src/modes/DeafMode.tsx"
-      ]
-    },
-    {
-      "name": "Sign Language Mode",
-      "description": "ASL gesture recognition using MediaPipe and custom heuristics for alphabet/numbers.",
-      "files": [
-        "src/modes/SignLanguageMode.tsx",
-        "src/features/vision/aslHeuristics.ts",
-        "src/features/vision/useHandGesture.ts"
-      ]
-    },
-    {
-      "name": "Dashboard",
-      "description": "Main navigation hub for accessing different accessibility modes.",
-      "files": [
-        "src/components/Dashboard.tsx"
-      ]
-    }
-  ]
+    "tech_stack": [
+        "TypeScript",
+        "React",
+        "Vite",
+        "TailwindCSS",
+        "Node.js",
+        "Express",
+        "Python",
+        "Flask",
+        "TensorFlow.js",
+        "MediaPipe"
+    ],
+    "features": [
+        {
+            "name": "Main Application",
+            "description": "Root component managing routing, authentication state, and mode selection.",
+            "files": [
+                "src/App.tsx",
+                "src/main.tsx"
+            ]
+        },
+        {
+            "name": "Visual Aid (Blind Mode)",
+            "description": "Object detection using COCO-SSD with text-to-speech feedback.",
+            "files": [
+                "src/modes/BlindMode.tsx"
+            ]
+        },
+        {
+            "name": "Hearing Support (Deaf Mode)",
+            "description": "Real-time speech-to-text and sound event detection.",
+            "files": [
+                "src/modes/DeafMode.tsx"
+            ]
+        },
+        {
+            "name": "Sign Language Interpreter",
+            "description": "Gesture recognition for ASL using MediaPipe and custom heuristics.",
+            "files": [
+                "src/modes/SignLanguageMode.tsx",
+                "src/features/vision/aslHeuristics.ts"
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "description": "Main dashboard for selecting modes and viewing metrics.",
+            "files": [
+                "src/components/Dashboard.tsx"
+            ]
+        },
+        {
+            "name": "Navigation & Settings",
+            "description": "Navbar and Settings dropdown for profile and accessibility controls.",
+            "files": [
+                "src/components/Navbar.tsx",
+                "src/components/SettingsDropdown.tsx"
+            ]
+        },
+        {
+            "name": "Node.js Backend",
+            "description": "Express server handling API requests and proxying to Python service.",
+            "files": [
+                "server/index.js"
+            ]
+        },
+        {
+            "name": "Python Gesture Service",
+            "description": "Flask API for advanced gesture processing.",
+            "files": [
+                "backend/api/app.py"
+            ]
+        }
+    ]
 }

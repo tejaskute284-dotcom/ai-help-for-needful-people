@@ -6,8 +6,12 @@ import { GesturePanel } from './GesturePanel';
 import { STTPanel } from './STTPanel';
 import { TTSPanel } from './TTSPanel';
 
+interface SettingsDropdownProps {
+    onProfileClick?: () => void;
+}
+
 // Settings Menu Component
-export default function SettingsDropdown() {
+export default function SettingsDropdown({ onProfileClick }: SettingsDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeView, setActiveView] = useState<'main' | 'accessibility'>('main');
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -90,7 +94,14 @@ export default function SettingsDropdown() {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="flex flex-col gap-1"
                             >
-                                <MenuItem icon={User} label="My Profile" desc="Manage your info" onClick={() => handleItemClick("Profile Settings")} />
+                                <MenuItem icon={User} label="My Profile" desc="Manage your info" onClick={() => {
+                                    if (onProfileClick) {
+                                        onProfileClick();
+                                        setIsOpen(false);
+                                    } else {
+                                        handleItemClick("Profile Settings");
+                                    }
+                                }} />
                                 <div onClick={() => setActiveView('accessibility')}>
                                     <MenuItem icon={Hand} label="Accessibility Tools" desc="Gestures, Voice, & Display" onClick={() => { }} />
                                 </div>

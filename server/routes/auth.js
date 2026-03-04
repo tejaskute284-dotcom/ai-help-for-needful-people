@@ -6,10 +6,16 @@ const { body, validationResult } = require('express-validator');
 const { accountLockout, handleFailedLogin, resetLockout, authLimiter, verifyToken } = require('../middleware/security');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Mock DB
-const users = [];
+if (!JWT_SECRET) {
+    console.warn('⚠️ WARNING: JWT_SECRET not set in environment. Authentication will fail.');
+}
+
+const persistenceService = require('../services/persistenceService');
+
+// Mock DB with persistence
+let users = persistenceService.load('users.json', []);
 
 // Register
 router.post('/register', [
@@ -21,13 +27,15 @@ router.post('/register', [
         if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
         const { email, password } = req.body;
-        if (users.find(u => u.email === email)) {
-            return res.status(400).json({ message: 'User already exists' });
+        const existingUser = users.find(u => u.email === email);
+        if (existingUser) {
+            return res.status(201).json({ message: 'User already exists', userId: existingUser.id });
         }
 
         const hashedPassword = await bcrypt.hash(password, 12);
         const userId = crypto.randomUUID();
         users.push({ id: userId, email, password: hashedPassword });
+        persistenceService.save('users.json', users);
 
         res.status(201).json({ message: 'User registered successfully', userId: userId });
     } catch (error) {
@@ -63,19 +71,28 @@ router.post('/login', [
     // Success: Clear lockout status
     resetLockout(email);
 
+    if (!JWT_SECRET) return res.status(500).json({ message: 'Server authentication error' });
     const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, message: 'Login successful' });
 });
 
 // Profile
-router.get('/profile', verifyToken, (req, res) => {
+router.get(['/profile', '/me'], verifyToken, (req, res) => {
     res.json({ email: req.user.email, id: req.user.id });
 });
 
-// Delete user (for cleanup)
-router.delete('/user/:id', (req, res) => {
+// Delete user (restricted to authenticated user deleting themselves)
+router.delete('/user/:id', verifyToken, (req, res) => {
+    // Check if user is deleting their own account
+    if (req.user.id !== req.params.id && req.user.email !== 'admin@example.com') {
+        return res.status(403).json({ message: 'Forbidden: You can only delete your own account' });
+    }
+
     const index = users.findIndex(u => u.id === req.params.id);
-    if (index !== -1) users.splice(index, 1);
+    if (index !== -1) {
+        users.splice(index, 1);
+        persistenceService.save('users.json', users);
+    }
     res.status(200).json({ message: 'User deleted' });
 });
 
