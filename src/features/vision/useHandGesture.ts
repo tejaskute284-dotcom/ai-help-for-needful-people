@@ -12,6 +12,7 @@ export function useHandGesture() {
     const [error, setError] = useState<string | null>(null);
 
     const recognizerRef = useRef<GestureRecognizer | null>(null);
+    const drawingUtilsRef = useRef<DrawingUtils | null>(null);
 
     useEffect(() => {
         const init = async () => {
@@ -19,9 +20,9 @@ export function useHandGesture() {
                 setIsInitializing(true);
                 recognizerRef.current = await createGestureRecognizer();
                 setIsInitializing(false);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error initializing MediaPipe:', err);
-                setError(err.message || 'Failed to initialize gesture recognition');
+                setError(err instanceof Error ? err.message : 'Failed to initialize gesture recognition');
                 setIsInitializing(false);
             }
         };
@@ -44,6 +45,12 @@ export function useHandGesture() {
         if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            // Re-initialize drawing utils when canvas size changes
+            drawingUtilsRef.current = new DrawingUtils(ctx);
+        }
+
+        if (!drawingUtilsRef.current) {
+            drawingUtilsRef.current = new DrawingUtils(ctx);
         }
 
         try {
@@ -52,7 +59,7 @@ export function useHandGesture() {
             // Draw results
             ctx.save();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const drawingUtils = new DrawingUtils(ctx);
+            const drawingUtils = drawingUtilsRef.current;
 
             if (results.landmarks) {
                 for (const landmarks of results.landmarks) {
@@ -90,9 +97,16 @@ export function useHandGesture() {
                 }
             }
 
-            setGestureOutput({
-                gesture: finalGesture,
-                confidence: finalConfidence
+            // Only update state if gesture changed or confidence shifted significantly
+            setGestureOutput(prev => {
+                const confidenceDiff = Math.abs(prev.confidence - finalConfidence);
+                if (prev.gesture !== finalGesture || confidenceDiff > 0.05) {
+                    return {
+                        gesture: finalGesture,
+                        confidence: finalConfidence
+                    };
+                }
+                return prev;
             });
 
         } catch (err) {
