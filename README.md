@@ -126,7 +126,7 @@ This project is licensed under the ISC License.
 
 ## 👥 Author
 
-TEJAS
+TEJAS & Wisdom King AR
 
 ## 🤝 Contributing
 
